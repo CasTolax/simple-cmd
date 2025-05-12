@@ -43,7 +43,6 @@ class Arayuz:
             except Exception as e:
                 print(f"Hata oluştu: {e}")
 
-
 class Terminal:
     def __init__(self):
         self.baslangıc = datetime.now()
@@ -55,46 +54,52 @@ class Terminal:
         print("help yazarak kullanabileceğiniz komutlara bakabilirsiniz.\n")
         while True:
             try:
-                gövde = input("CeaserCmd>> ").strip().lower()
+                gövde = input("CeaserCmd>> ").strip()
                 self.komut_gecmisi.append(gövde)
 
                 timestamp = time.strftime("[%Y-%m-%d %H:%M:%S]")
                 with open(LOG_DOSYA, "a", encoding="utf-8") as f:
                     f.write(f"{timestamp} {gövde}\n")
 
-                if gövde == "help":
+                komut = gövde.lower()
+
+                if komut == "help":
                     self.komut_help()
-                elif gövde == "cd":
+                elif komut == "cd":
                     self.komut_cd()
-                elif gövde == "ls":
+                elif komut == "ls":
                     self.komut_ls()
-                elif gövde == "calc":
+                elif komut == "tinfo":
+                    self.komut_tinfo()
+                elif komut == "calc":
                     self.komut_calc()
-                elif gövde == "datetime":
+                elif komut == "datetime":
                     self.uptime()
-                elif gövde == "info":
+                elif komut == "info":
                     self.komut_info()
-                elif gövde == "timelook":
+                elif komut == "timelook":
                     self.komut_timelook()
-                elif gövde == "log":
+                elif komut == "log":
                     self.komut_log()
-                elif gövde == "log --clear":
+                elif komut == "log --clear":
                     self.komut_log_clear()
-                elif gövde == "colorama":
-                    print("sorry this isn't exists")
-                elif gövde == "userinfo":
+                elif komut == "userinfo":
                     self.komut_userinfo()
-                elif gövde == "clear":
+                elif komut == "clear":
                     os.system("cls" if os.name == "nt" else "clear")
-                elif gövde == "history":
+                elif komut == "history":
                     self.komut_history()
-                elif gövde == "exit":
+                elif komut.startswith("run"):
+                    self.dosyacalıstır(gövde)
+                elif komut == "exit":
                     print("programdan çıkıldı")
                     break
-                elif gövde == "yzgame":
+                elif komut == "yzgame":
                     self.komut_yzgame()
-                elif gövde == "lucky":
+                elif komut == "lucky":
                     self.komut_lucky()
+                elif komut == "colorama":
+                    print("sorry this isn't exists")
                 else:
                     print("Geçersiz komut. 'help' yazarak komutları görebilirsiniz.")
 
@@ -105,7 +110,9 @@ class Terminal:
         print("""
 Kullanabileceğiniz komutlar:
   cd         - Klasör değiştir
-  clear      - sil                        
+  tinfo      - terminal hakkında bilgiler
+  clear      - sil 
+  run        - dosyayı çalıştırır(.py)                       
   ls         - Dosyaları listele
   calc       - basit hesap makinesi
   datetime   - işlem zamanı veya bilgisiyar açık kalma süresi
@@ -119,26 +126,23 @@ Kullanabileceğiniz komutlar:
   yzgame     - yazı/tura şans oyunu
   lucky      - günün şanslı sayısını gösterir
 """)
-        
-
 
     def ayarları_yukle(self):
         try:
-            with open("ayarlar.json","r", encoding="utf-8") as f:
-                self.ayarlar = json.loads(f)
-                print("ayarlar kaydedildi")
+            with open("ayarlar.json", "r", encoding="utf-8") as f:
+                self.ayarlar = json.load(f)
+                print("ayarlar yüklendi")
         except FileNotFoundError:
             print("ayar dosyası bulunamadı")
-            self.ayarlar = {"tema":"koyu","log":True}
+            self.ayarlar = {"tema": "koyu", "log": True}
         except json.JSONDecodeError:
-            print("ayar dosyası bozuk.varsayılanlar yüklendi")
-            self.ayarlar = {"tema":"koyu", "log":True}
-
+            print("ayar dosyası bozuk. varsayılanlar yüklendi")
+            self.ayarlar = {"tema": "koyu", "log": True}
 
     def ayarları_kaydet(self):
-        with open("ayarlar.json","w", encoding="utf-8") as f:
-            json.dump(self.ayarlar,f, indent=4, ensure_ascii=False)
-            print("ayarlar kaydedildi")           
+        with open("ayarlar.json", "w", encoding="utf-8") as f:
+            json.dump(self.ayarlar, f, indent=4, ensure_ascii=False)
+            print("ayarlar kaydedildi")
 
     def komut_cd(self):
         secim = input("gitmek istediğiniz dosya: ").strip()
@@ -147,6 +151,16 @@ Kullanabileceğiniz komutlar:
             print(f"{secim} dosyasına geçildi")
         else:
             print("hata: yanlış veya olmayan dosya")
+
+    def dosyacalıstır(self, komut):
+        dosya_adi = komut[4:].strip()
+        if not dosya_adi.endswith(".py"):
+            print("sadece .py uzantılı dosyalar çalıştırılabilir")
+        elif not os.path.exists(dosya_adi):
+            print(f"hata: {dosya_adi} dosyası bulunamadı")
+        else:
+            print(f"{dosya_adi} çalıştırılıyor...\n")
+            os.system(f"python {dosya_adi}")
 
     def komut_ls(self):
         print("""
@@ -159,19 +173,22 @@ Kullanabileceğiniz komutlar:
     def komut_calc(self):
         hesap = input("hesaplamak istediğiniz işlemi giriniz (ör: 2+2): ")
         if all(c in "0123456789+-*/(). " for c in hesap):
-            print(eval(hesap))
+            try:
+                print(eval(hesap))
+            except:
+                print("işlem hatalı")
         else:
             print("geçersiz karakter")
-
 
     def uptime(self):
         suan = datetime.now()
         fark = suan - self.baslangıc
-        saat,dakika = divmod(fark.seconds,3600)
-        dakika,saniye = divmod(dakika,60)
-        print(f"program açık kalmak süresi: {fark.days} gün, {saat} saat, {dakika} dakika, {saniye} saniye")
+        saat, kalan = divmod(fark.seconds, 3600)
+        dakika, saniye = divmod(kalan, 60)
+        print(f"program açık kalma süresi: {fark.days} gün, {saat} saat, {dakika} dakika, {saniye} saniye")
 
-
+    def komut_tinfo(self):
+        print("kuruluş zamanı: 4 mayıs \n dev:CanCeaser \n")
 
     def komut_info(self):
         print("--sistem bilgileri--")
@@ -245,8 +262,6 @@ Kullanabileceğiniz komutlar:
         sayi = random.randint(1, 100)
         print(f"{sayi} şanslı sayınız.")
 
-
-# Program başlat
 if __name__ == "__main__":
     arayuz = Arayuz()
     arayuz.arayuz()
