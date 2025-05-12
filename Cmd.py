@@ -5,7 +5,7 @@ import random
 from datetime import datetime
 import json
 
-PASSWORD = "Can123"
+PASSWORD = "Can1234"
 LOG_DOSYA = "log.txt"
 
 class Arayuz:
